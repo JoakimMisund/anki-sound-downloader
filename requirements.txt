@@ -1,0 +1,4 @@
+selenium
+wget
+anki
+selenium-wire
