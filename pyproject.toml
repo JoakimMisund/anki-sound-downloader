@@ -1,0 +1,20 @@
+[project]
+name = "anki_korean_downloader"
+version = "0.0.1"
+authors = [
+    { name="Joakim Misund", email="joakim.misund@gmail.com" },
+]
+description = "A small script to download sound files for korean words and sentences"
+requires-python = ">=3.8"
+
+dependencies = [
+    "selenium",
+    "wget",
+    "anki",
+    "selenium-wire",
+]
+
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
