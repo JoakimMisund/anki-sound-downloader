@@ -1,4 +1,4 @@
-import wget
+import requests
 import os
 import sys
 
@@ -27,6 +27,59 @@ class NaverTTS:
 
     def log(self, msg):
         print(msg)
+
+    def query_requests(self, word, file_format="tts_{word}"):
+
+        cookies = {
+            "JSESSIONID": "7E37826DAB74E96BDCDA03F1DE89A7F6",
+            "NBB": "NCW5DEJZI3AWI",
+            "papago_skin_local": "en",
+        }
+
+        data = {
+            "alpha": "0",
+            "pitch": "0",
+            "speaker": "kyuri",
+            "speed": "0",
+            "text": word
+        }
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0",
+            "Accept": "application/json",
+            "Accept-Language": "en",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        }
+
+        url = "https://papago.naver.com/apis/tts/makeID"
+
+        response = requests.post(url,
+                                 data=data,
+                                 headers=headers,
+                                 cookies=cookies)
+
+        if response.status_code != 200:
+            print(response)
+            return
+        
+        try:
+            response_json = response.json()
+            id_ = response_json["id"]
+            
+            url = f"https://papago.naver.com/apis/tts/{id_}"
+            response = requests.post(url,
+                                     data=data,
+                                     headers=headers,
+                                     cookies=cookies)
+            
+            print(response.status_code)
+            print(dict(response))
+                
+        except Exception as e:
+            print(e)
+            
+        
 
     def query(self, word, file_format="tts_{word}"):
         dest_filename = self._dest_directory + "/" + file_format.format(word=word) + ".mp3"
