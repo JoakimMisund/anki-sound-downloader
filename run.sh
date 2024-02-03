@@ -11,6 +11,6 @@ if [ ! -f "${COLLECTION_PATH}" ]; then
     exit 1
 fi
 
-python3 ${SCRIPT_LOC}/src/main.py ${COLLECTION_PATH} ${SOUND_DIR} \
+python3 "${SCRIPT_LOC}/src/main.py" "${COLLECTION_PATH}" "${SOUND_DIR}" \
 	--src_field Korean --dst_field Sound \
-	--browser firefox --driver ${SCRIPT_LOC}/bin/geckodriver
+	--browser firefox --driver "${SCRIPT_LOC}/bin/geckodriver"
