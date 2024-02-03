@@ -30,11 +30,27 @@ class NaverTTS:
 
     def query_requests(self, word, file_format="tts_{word}"):
 
-        cookies = {
-            "JSESSIONID": "7E37826DAB74E96BDCDA03F1DE89A7F6",
-            "NBB": "NCW5DEJZI3AWI",
-            "papago_skin_local": "en",
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0",
+            "Accept": "application/json",
+            "Accept-Language": "en",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "Referer": "https://papago.naver.com/",
+            "Origin": "https://papago.naver.com",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "Authorization": "PPG 4bd9a1f7-5f83-4621-b05f-eba83e73e4cf:tAWwSr3PKe2anSl+VtvjJQ==",
         }
+
+        session = requests.Session()
+
+        session.headers.update(headers)
+
+        response = session.get("https://papago.naver.com/")
+
+        print(session.cookies)
 
         data = {
             "alpha": "0",
@@ -44,23 +60,16 @@ class NaverTTS:
             "text": word
         }
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0",
-            "Accept": "application/json",
-            "Accept-Language": "en",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        }
+        session.headers.update(headers)
 
         url = "https://papago.naver.com/apis/tts/makeID"
 
-        response = requests.post(url,
-                                 data=data,
-                                 headers=headers,
-                                 cookies=cookies)
+        response = session.post(url,
+                                data=data)
 
         if response.status_code != 200:
             print(response)
+            print(response.content)
             return
         
         try:

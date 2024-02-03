@@ -71,7 +71,7 @@ def create_browser(args):
         options.headless = False
     else:
         options.headless = True
-
+    # TODO: Your Firefox profile cannot be loaded. It may be missing or inaccessible.
     browser = browser_class(service=service, options=options)
     browser.implicitly_wait(15)
     browser.set_page_load_timeout(15)
@@ -165,4 +165,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    handler = naver_tts.NaverTTS(None, None)
+    handler.query_requests("날씨")
+                       
