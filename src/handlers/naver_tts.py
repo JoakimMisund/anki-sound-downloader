@@ -1,6 +1,8 @@
 import requests
 import os
 import sys
+import hmac
+import base64
 
 import zlib
 import json
@@ -25,14 +27,30 @@ class NaverTTS:
         self._dest_directory = dest_directory
         self._browser = browser
 
+        self._session = requests.Session()
+        self._session.get("https://papago.naver.com/")
+
+        self._uuid = "4bd9a1f7-5f83-4621-b05f-eba83e73e4cf"
+        self._makeid_url = "https://papago.naver.com/apis/tts/makeID"
+        self._key = "v1.8.0_33f494c37e"
+
     def log(self, msg):
         print(msg)
 
+    def create_authorization(self, timestamp):
+        message = self._uuid + "\n" + self._makeid_url + "\n" + timestamp
+        mac = hmac.new(self._key.encode(), message.encode(), 'MD5')
+        auth = base64.b64encode(mac.digest()).decode()
+        return f"PPG {self._uuid}:{auth}"
+
     def query_requests(self, word, file_format="tts_{word}"):
+        dest_filename = self._dest_directory + "/" + file_format.format(word=word) + ".mp3"
+        if os.path.isfile(dest_filename):
+            return dest_filename
 
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0",
-            "Accept": "application/json",
+            "Accept": "application/json,image/avif,image/webp,*/*",
             "Accept-Language": "en",
             "Accept-Encoding": "gzip, deflate, br",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -41,17 +59,20 @@ class NaverTTS:
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
-            "Authorization": "PPG 4bd9a1f7-5f83-4621-b05f-eba83e73e4cf:tAWwSr3PKe2anSl+VtvjJQ==",
         }
 
-        session = requests.Session()
+        self._session.headers.update(headers)
 
-        session.headers.update(headers)
 
-        response = session.get("https://papago.naver.com/")
-
-        print(session.cookies)
-
+        response = self._session.get("https://papago.naver.com/apis/timestamp")
+        timestamp = response.json()["timestamp"]
+        timestamp = str(int(timestamp) + 60000)
+        
+        self._session.headers.update({
+            "Authorization": self.create_authorization(timestamp),
+            "Timestamp": timestamp,
+        })
+        
         data = {
             "alpha": "0",
             "pitch": "0",
@@ -60,35 +81,45 @@ class NaverTTS:
             "text": word
         }
 
-        session.headers.update(headers)
-
-        url = "https://papago.naver.com/apis/tts/makeID"
-
-        response = session.post(url,
+        response = self._session.post(self._makeid_url,
                                 data=data)
 
         if response.status_code != 200:
             print(response)
             print(response.content)
-            return
+            return None
         
         try:
             response_json = response.json()
             id_ = response_json["id"]
+
+            headers = {
+                "Accept": "audio/webm,audio/ogg,audio/wav,audio/*;q=0.9,application/ogg;q=0.7,video/*;q=0.6,*/*;q=0.5",
+                "Accept-Encoding": "gzip, deflate, br, identity",
+                "Sec-Fetch-Dest": "audio",
+                "Sec-Fetch-Mode": "no-cors",
+            }
+
+            self._session.headers.update(headers)
             
             url = f"https://papago.naver.com/apis/tts/{id_}"
-            response = requests.post(url,
-                                     data=data,
-                                     headers=headers,
-                                     cookies=cookies)
+            response = self._session.get(url)
             
-            print(response.status_code)
-            print(dict(response))
-                
+            with open(dest_filename, "wb") as f:
+                f.write(response.content)
+
+            self.log(f"File downloaded to {dest_filename}")
+            if (os.path.getsize(dest_filename) == 0):
+                raise Exception("Error downloading file " + url +
+                                " to " + dest_filename, file=sys.stderr)
+
+            return dest_filename
+            
         except Exception as e:
             print(e)
-            
-        
+
+        return None
+
 
     def query(self, word, file_format="tts_{word}"):
         dest_filename = self._dest_directory + "/" + file_format.format(word=word) + ".mp3"

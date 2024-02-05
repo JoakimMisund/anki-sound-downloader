@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import pathlib
+import time
 
 from anki.collection import Collection
 import selenium
@@ -97,8 +98,10 @@ def run_through_collection(collection, handlers):
     dst_field = config["dst_field"]
     word_sep = config["separator"]
 
+    count = 0
+
     for note_id in collection.find_notes(query):
-        note = collection.getNote(note_id)
+        note = collection.get_note(note_id)
 
         keys = note.keys()
 
@@ -120,9 +123,13 @@ def run_through_collection(collection, handlers):
             print(f"Was unable to find note {note_id}'s src word...")
             continue
 
+
+        time.sleep(5)
+
         for retriever in handlers:
-            filepath = retriever.query(word)
-            if os.path.isfile(filepath):
+            filepath = retriever.query_requests(word)
+            print(filepath)
+            if filepath is not None and os.path.isfile(filepath):
                 filename = collection.media.add_file(filepath)
 
                 dst_value = f"[sound:{filename}]"
@@ -130,7 +137,6 @@ def run_through_collection(collection, handlers):
 
                 ret = collection.update_note(note)
                 print(f"Updated note {note_id} with '{src_field}' '{note[src_field]}' with '{dst_field}' '{note[dst_field]}': ret {ret}")
-                collection.save()
                 break
 
 
@@ -148,8 +154,8 @@ def main():
         print("The download directory given does not exist: " + download_directory)
         return 1
 
-    browser = create_browser(args)
-    handlers = create_handlers(args, browser)
+    #browser = create_browser(args)
+    handlers = create_handlers(args, None) # Was browser
 
     collection = Collection(collection_path)
 
@@ -159,12 +165,38 @@ def main():
         print(f"Something went wrong: {e}", file=sys.stderr)
 
     collection.media.check()
-    collection.media.close()
-    collection.close()
-    browser.quit()
+    #collection.media.force_resync()
+    collection.close_for_full_sync()
+    #browser.quit()
 
 
 if __name__ == "__main__":
-    handler = naver_tts.NaverTTS(None, None)
-    handler.query_requests("날씨")
+    #handler = naver_tts.NaverTTS("/tmp/", None)
+    #handler.query_requests("날씨")
+    main()
+
+
+"""
+    import hmac
+    import base64
+
+    #PPG 4bd9a1f7-5f83-4621-b05f-eba83e73e4cf:Jyffp48sdS5nj14Ccqxh4w==
+    # 1707036315670
+    # "alpha=0&pitch=0&speaker=kyuri&speed=0&text=%EC%A0%81%EC%9D%91%ED%95%98%EB%8B%A4"
+
+    # Look also at vendors-pretty.js hmac.js init
+
+    timestamp = "1707036315670"
+    uuid = "4bd9a1f7-5f83-4621-b05f-eba83e73e4cf"
+    url = "papago.naver.com/apis/tts/makeID"  #  ? main-pretty.js Authorization: "PPG " + t + ":" + p.a.HmacMD5(t + "\n" + e.split("?")[0] + "\n" + n, "v1.8.0_33f494c37e").toString(p.a.enc.Base64),
+    url = "https://papago.naver.com/apis/tts/makeID"
+    message = uuid + "\n" + url + "\n" + timestamp
+    key = "v1.8.0_33f494c37e"
+    mac = hmac.new(key.encode(), key.encode(), 'MD5')
+    print(mac.digest())
+    auth = base64.b64encode(mac.digest()).decode()
+    print(auth)
+    authorization = f"PPG {uuid}:{auth}"
+    print(authorization)
                        
+"""
