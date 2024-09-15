@@ -1,0 +1,4 @@
+Download https://papago.naver.com/
+Search for script tags. Find the one with main.<ID>.chunk.js
+Find HmacMD5 and its second argument.
+Use it as dynamic key.
