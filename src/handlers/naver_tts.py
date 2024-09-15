@@ -32,7 +32,7 @@ class NaverTTS:
 
         self._uuid = "4bd9a1f7-5f83-4621-b05f-eba83e73e4cf"
         self._makeid_url = "https://papago.naver.com/apis/tts/makeID"
-        self._key = "v1.8.0_33f494c37e"
+        self._key = "v1.8.4_bbf86e0446"
 
     def log(self, msg):
         print(msg)
